@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>물고기 밥주기 게임 🐟</title>
+    <title>점프점프 장애물 피하기 🏃</title>
     <style>
         * {
             box-sizing: border-box;
@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #e0f7fa;
+            background-color: #f7f7f7;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -23,73 +23,82 @@
         }
 
         h1 {
-            color: #006064;
+            color: #333;
             margin-bottom: 10px;
         }
 
-        .stats-container {
-            display: flex;
-            gap: 20px;
+        .score-board {
             font-size: 1.2rem;
             font-weight: bold;
-            color: #00838f;
+            color: #555;
             margin-bottom: 15px;
         }
 
-        /* 어항 영역 */
-        #aquarium {
-            width: 700px;
-            height: 450px;
-            background: linear-gradient(to bottom, #81d4fa, #0288d1);
-            border: 8px solid #b2ebf2;
-            border-radius: 20px;
+        /* 게임 화면 */
+        #game-board {
+            width: 600px;
+            height: 250px;
+            background-color: #fff;
+            border-bottom: 4px solid #555;
             position: relative;
             overflow: hidden;
-            cursor: pointer;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
-        /* 물고기 */
-        #fish {
+        /* 플레이어 (공룡) */
+        #player {
             position: absolute;
-            font-size: 40px; /* 초기 물고기 크기 */
-            transition: left 0.8s ease-out, top 0.8s ease-out, transform 0.3s ease, font-size 0.3s ease;
-            transform-origin: center center;
-            pointer-events: none; /* 클릭 이벤트가 어항으로 통과하도록 설정 */
+            bottom: 0px;
+            left: 50px;
+            font-size: 40px;
+            line-height: 40px;
             z-index: 10;
         }
 
-        /* 물고기 방향 */
-        .left {
-            transform: scaleX(1);
-        }
-        .right {
-            transform: scaleX(-1);
+        /* 점프 애니메이션 클래스 */
+        .jump {
+            animation: jumpAnimation 0.5s cubic-bezier(0.1, 0.7, 0.1, 1);
         }
 
-        /* 먹이 */
-        .food {
+        @keyframes jumpAnimation {
+            0% { bottom: 0px; }
+            50% { bottom: 120px; } /* 점프 높이 */
+            100% { bottom: 0px; }
+        }
+
+        /* 장애물 (선인장) */
+        .obstacle {
             position: absolute;
-            width: 12px;
-            height: 12px;
-            background-color: #ffb74d;
-            border-radius: 50%;
-            border: 1px solid #f57c00;
-            z-index: 5;
+            bottom: 0px;
+            right: -30px;
+            font-size: 30px;
+            line-height: 30px;
         }
 
-        /* 안내 문구 및 버튼 */
+        /* 게임 오버 문구 */
+        #game-over-text {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            font-weight: bold;
+            color: #e53935;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
         .instructions {
             margin-top: 15px;
-            color: #006064;
+            color: #666;
             font-weight: bold;
         }
 
-        .btn-reset {
+        .btn-start {
             margin-top: 10px;
-            padding: 8px 16px;
+            padding: 10px 20px;
             font-size: 1rem;
-            background-color: #00838f;
+            background-color: #4caf50;
             color: white;
             border: none;
             border-radius: 5px;
@@ -97,149 +106,148 @@
             transition: background 0.2s;
         }
 
-        .btn-reset:hover {
-            background-color: #006064;
+        .btn-start:hover {
+            background-color: #388e3c;
         }
     </style>
 </head>
 <body>
 
-    <h1>🐟 물고기 밥주기 게임</h1>
+    <h1>🏃 장애물 피하기 게임</h1>
     
-    <div class="stats-container">
-        <div>먹은 밥: <span id="score">0</span>개</div>
-        <div>물고기 크기: Level <span id="level">1</span></div>
+    <div class="score-board">
+        점수: <span id="score">0</span> | 최고 점수: <span id="high-score">0</span>
     </div>
 
-    <!-- 어항 (클릭 시 밥이 떨어짐) -->
-    <div id="aquarium">
-        <div id="fish" class="left">🐟</div>
+    <div id="game-board">
+        <div id="player">🦖</div>
+        <div id="game-over-text">GAME OVER</div>
     </div>
 
-    <p class="instructions">💡 어항 안을 클릭해서 물고기에게 밥을 주세요!</p>
-    <button class="btn-reset" onclick="resetGame()">다시 시작하기</button>
+    <p class="instructions">💡 [스페이스바] 누르기 또는 [화면 클릭]으로 점프하세요!</p>
+    <button class="btn-start" onclick="startGame()">게임 시작 / 다시하기</button>
 
     <script>
-        const aquarium = document.getElementById('aquarium');
-        const fish = document.getElementById('fish');
+        const player = document.getElementById('player');
+        const gameBoard = document.getElementById('game-board');
         const scoreDisplay = document.getElementById('score');
-        const levelDisplay = document.getElementById('level');
+        const highScoreDisplay = document.getElementById('high-score');
+        const gameOverText = document.getElementById('game-over-text');
 
+        let isJumping = false;
+        let isGameOver = true;
         let score = 0;
-        let level = 1;
-        let fishSize = 40; // 초기 크기(px)
-        
-        // 물고기 현재 위치 (어항 중앙 근처)
-        let fishX = 300;
-        let fishY = 200;
-        
-        let foods = []; // 생성된 먹이 리스트
-        let isEating = false; // 먹이를 향해 이동 중인지 여부
+        let highScore = 0;
+        let gameInterval;
+        let obstacleTimeout;
+        let obstacles = [];
 
-        // 초기 물고기 위치 설정
-        fish.style.left = fishX + 'px';
-        fish.style.top = fishY + 'px';
+        // 점프 동작
+        function jump() {
+            if (isJumping || isGameOver) return;
+            isJumping = true;
+            player.classList.add('jump');
 
-        // 어항 클릭 이벤트 (밥 투척)
-        aquarium.addEventListener('click', (e) => {
-            const rect = aquarium.getBoundingClientRect();
-            const x = e.clientX - rect.left - 6; // 먹이 중앙 맞추기
-            const y = e.clientY - rect.top - 6;
+            setTimeout(() => {
+                player.classList.remove('jump');
+                isJumping = false;
+            }, 500); // 점프 애니메이션 시간과 동일하게 설정
+        }
 
-            createFood(x, y);
+        // 입력 이벤트 (스페이스바 및 클릭)
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault(); // 스페이스바 페이지 스크롤 방지
+                jump();
+            }
         });
 
-        // 먹이 생성 함수
-        function createFood(x, y) {
-            const food = document.createElement('div');
-            food.classList.add('food');
-            food.style.left = x + 'px';
-            food.style.top = y + 'px';
-            
-            aquarium.appendChild(food);
-            
-            // 먹이 객체 저장 (위치 및 가라앉는 속도)
-            foods.push({
-                element: food,
-                x: x,
-                y: y
+        gameBoard.addEventListener('click', jump);
+
+        // 장애물 생성
+        function createObstacle() {
+            if (isGameOver) return;
+
+            const obstacle = document.createElement('div');
+            obstacle.classList.add('obstacle');
+            obstacle.innerText = '🌵';
+            obstacle.style.right = '-30px';
+            gameBoard.appendChild(obstacle);
+
+            obstacles.push({
+                element: obstacle,
+                x: 600 // 초기 x 위치
             });
+
+            // 랜덤한 시간 뒤 다음 장애물 생성 (1초 ~ 2.5초 사이)
+            const randomTime = Math.floor(Math.random() * 1500) + 1000;
+            obstacleTimeout = setTimeout(createObstacle, randomTime);
         }
 
-        // 게임 루프 (먹이 가라앉기 & 물고기 이동/먹기)
-        function gameLoop() {
-            // 1. 먹이 떨어뜨리기
-            const bottomLimit = aquarium.clientHeight - 15;
-            for (let i = 0; i < foods.length; i++) {
-                if (foods[i].y < bottomLimit) {
-                    foods[i].y += 1; // 떨어지는 속도
-                    foods[i].element.style.top = foods[i].y + 'px';
-                }
-            }
+        // 게임 루프 (이동 및 충돌 검사)
+        function updateGame() {
+            if (isGameOver) return;
 
-            // 2. 물고기가 가장 가까운 먹이 찾아서 이동하기
-            if (foods.length > 0) {
-                let targetFood = foods[0]; // 가장 먼저 떨어진 먹이 추적
+            // 점수 증가
+            score++;
+            scoreDisplay.textContent = Math.floor(score / 5);
 
-                // 물고기 방향 전환 (좌/우)
-                if (targetFood.x < fishX) {
-                    fish.className = 'left';
-                } else {
-                    fish.className = 'right';
-                }
+            // 장애물 이동
+            for (let i = 0; i < obstacles.length; i++) {
+                let obs = obstacles[i];
+                obs.x -= 6; // 장애물 속도
+                obs.element.style.right = (600 - obs.x) + 'px';
 
-                // 물고기를 먹이 위치로 이동
-                fishX = targetFood.x - fishSize / 2;
-                fishY = targetFood.y - fishSize / 2;
+                // 충돌 검사
+                // 플레이어 위치
+                const playerBottom = parseInt(window.getComputedStyle(player).getPropertyValue('bottom'));
                 
-                fish.style.left = fishX + 'px';
-                fish.style.top = fishY + 'px';
+                // 플레이어와 장애물이 X축상에서 겹치고 Y축(높이)이 낮을 때 충돌
+                if (obs.x > 50 && obs.x < 85 && playerBottom < 30) {
+                    endGame();
+                    return;
+                }
 
-                // 먹이와 충돌 검사 (먹었는지 확인)
-                const dist = Math.hypot((fishX + fishSize/2) - targetFood.x, (fishY + fishSize/2) - targetFood.y);
-                if (dist < fishSize / 2) {
-                    // 먹이 제거
-                    targetFood.element.remove();
-                    foods.shift(); // 첫 번째 먹이 제거
-
-                    // 점수 및 크기 증가
-                    score++;
-                    scoreDisplay.textContent = score;
-
-                    if (score % 5 === 0) { // 밥 5개마다 레벨업 & 크기 증가
-                        level++;
-                        fishSize += 8;
-                        levelDisplay.textContent = level;
-                        fish.style.fontSize = fishSize + 'px';
-                    }
+                // 화면 밖으로 나간 장애물 제거
+                if (obs.x < -30) {
+                    obs.element.remove();
+                    obstacles.splice(i, 1);
+                    i--;
                 }
             }
 
-            requestAnimationFrame(gameLoop);
-        }
-
-        // 게임 리셋
-        function resetGame() {
-            score = 0;
-            level = 1;
-            fishSize = 40;
-            scoreDisplay.textContent = score;
-            levelDisplay.textContent = level;
-            fish.style.fontSize = fishSize + 'px';
-
-            // 모든 먹이 삭제
-            foods.forEach(f => f.element.remove());
-            foods = [];
-
-            // 물고기 위치 초기화
-            fishX = 300;
-            fishY = 200;
-            fish.style.left = fishX + 'px';
-            fish.style.top = fishY + 'px';
+            requestAnimationFrame(updateGame);
         }
 
         // 게임 시작
-        gameLoop();
+        function startGame() {
+            // 기존 상태 초기화
+            isGameOver = false;
+            score = 0;
+            scoreDisplay.textContent = '0';
+            gameOverText.style.display = 'none';
+
+            // 기존 장애물 제거
+            obstacles.forEach(obs => obs.element.remove());
+            obstacles = [];
+            clearTimeout(obstacleTimeout);
+
+            // 루프 시작
+            createObstacle();
+            requestAnimationFrame(updateGame);
+        }
+
+        // 게임 오버
+        function endGame() {
+            isGameOver = true;
+            gameOverText.style.display = 'block';
+
+            const currentScore = Math.floor(score / 5);
+            if (currentScore > highScore) {
+                highScore = currentScore;
+                highScoreDisplay.textContent = highScore;
+            }
+        }
     </script>
 </body>
 </html>
